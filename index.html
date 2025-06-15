@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AITIP BYOP - Bring Your Own Prompts Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1a2e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #9b59b6;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #a0a0b0;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        
+        /* Customer Selection */
+        .customer-selector {
+            background: rgba(155, 89, 182, 0.1);
+            border: 2px solid #9b59b6;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .customer-badges {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .customer-badge {
+            background: #2d2d44;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .customer-badge.active {
+            background: #667eea;
+            transform: scale(1.05);
+        }
+        
+        .customer-badge .prompts-count {
+            font-size: 0.8em;
+            color: #fbbf24;
+            margin-top: 5px;
+        }
+        
+        /* Flow Stage */
+        .flow-stage {
+            background: #1a1a2e;
+            border: 2px solid;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .stage-2 { border-color: #22c55e; }
+        .stage-3 { border-color: #667eea; }
+        .stage-4 { border-color: #f39c12; }
+        .stage-5 { border-color: #e74c3c; }
+        .stage-6 { border-color: #9b59b6; }
+        
+        .stage-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stage-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        .stage-2 .stage-number { background: #22c55e; }
+        .stage-3 .stage-number { background: #667eea; }
+        .stage-4 .stage-number { background: #f39c12; }
+        .stage-5 .stage-number { background: #e74c3c; }
+        .stage-6 .stage-number { background: #9b59b6; }
+        
+        .stage-title {
+            font-size: 1.4em;
+            font-weight: bold;
+        }
+        
+        /* Components Grid */
+        .components-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .component-card {
+            background: #2d2d44;
+            border: 1px solid #3d3d5c;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+        }
+        
+        .component-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            border-color: #667eea;
+        }
+        
+        .component-card h4 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #fff;
+        }
+        
+        .component-icon {
+            font-size: 1.5em;
+        }
+        
+        .component-details {
+            font-size: 0.9em;
+            color: #a0a0b0;
+            line-height: 1.6;
+        }
+        
+        /* Prompt Upload Section */
+        .prompt-upload-box {
+            background: rgba(34, 197, 94, 0.1);
+            border: 2px solid #22c55e;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+        
+        .upload-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .upload-method {
+            background: #3d3d5c;
+            border: 1px solid #4d4d6c;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-method:hover {
+            border-color: #22c55e;
+            transform: scale(1.02);
+        }
+        
+        .upload-method.active {
+            background: rgba(34, 197, 94, 0.2);
+            border-color: #22c55e;
+        }
+        
+        /* Validation Results */
+        .validation-result {
+            background: #3d3d5c;
+            border-left: 4px solid;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .validation-result.valid { border-color: #22c55e; }
+        .validation-result.warning { border-color: #fbbf24; }
+        .validation-result.invalid { border-color: #e74c3c; }
+        
+        /* Data Storage Display */
+        .storage-info {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid #667eea;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+        
+        .storage-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .storage-item:last-child {
+            border-bottom: none;
+        }
+        
+        .storage-label {
+            color: #a0a0b0;
+        }
+        
+        .storage-value {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        /* Registry Display */
+        .registry-display {
+            background: #0f0f23;
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .registry-entry {
+            background: #1a1a2e;
+            border: 1px solid #2d2d44;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        
+        .registry-field {
+            margin: 5px 0;
+        }
+        
+        .field-name {
+            color: #f39c12;
+        }
+        
+        .field-value {
+            color: #22c55e;
+        }
+        
+        /* Test Execution Display */
+        .test-progress {
+            background: #2d2d44;
+            border: 1px solid #3d3d5c;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .progress-bar {
+            background: #1a1a2e;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #22c55e, #16a085);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        /* Results Dashboard */
+        .results-dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .result-metric {
+            background: #2d2d44;
+            border: 1px solid #3d3d5c;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .result-metric .value {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .result-metric .label {
+            color: #a0a0b0;
+            font-size: 0.9em;
+        }
+        
+        /* Flow Arrow */
+        .flow-arrow {
+            text-align: center;
+            font-size: 2em;
+            color: #667eea;
+            margin: 20px 0;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(10px); }
+        }
+        
+        /* Alert Box */
+        .alert-box {
+            background: rgba(231, 76, 60, 0.1);
+            border: 2px solid #e74c3c;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-icon {
+            font-size: 1.5em;
+            color: #e74c3c;
+        }
+        
+        /* Code Block */
+        .code-block {
+            background: #0f0f23;
+            border: 1px solid #2d2d44;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+        }
+        
+        .code-highlight {
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 AITIF BYOP - Bring Your Own Prompts</h1>
+        <p class="subtitle">Customer-provided prompt testing, validation, registry storage, and scoring workflow</p>
+        
+        <!-- Customer Selection -->
+        <div class="customer-selector">
+            <h3>Select Customer Example</h3>
+            <div class="customer-badges">
+                <div class="customer-badge active" onclick="selectCustomer('fintech')">
+                    <strong>FinTech Corp</strong>
+                    <div class="prompts-count">150 custom prompts</div>
+                </div>
+                <div class="customer-badge" onclick="selectCustomer('health')">
+                    <strong>HealthAI Plus</strong>
+                    <div class="prompts-count">75 medical prompts</div>
+                </div>
+                <div class="customer-badge" onclick="selectCustomer('retail')">
+                    <strong>RetailBot Pro</strong>
+                    <div class="prompts-count">200 e-commerce prompts</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Stage 2: Prompt Intake & Validation -->
+        <div class="flow-stage stage-2">
+            <div class="stage-header">
+                <div class="stage-number">2</div>
+                <h3 class="stage-title">📥 Customer Prompt Intake & Validation</h3>
+            </div>
+            
+            <div class="prompt-upload-box">
+                <h4>🚀 Customer Prompt Upload Methods</h4>
+                <div class="upload-methods">
+                    <div class="upload-method active">
+                        <div style="font-size: 2em;">📄</div>
+                        <strong>CSV/JSON Upload</strong>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Bulk upload via portal</div>
+                    </div>
+                    <div class="upload-method">
+                        <div style="font-size: 2em;">🔌</div>
+                        <strong>API Integration</strong>
+                        <div style="font-size: 0.8em; margin-top: 5px;">POST /api/v1/prompts/bulk</div>
+                    </div>
+                    <div class="upload-method">
+                        <div style="font-size: 2em;">🔄</div>
+                        <strong>Git Integration</strong>
+                        <div style="font-size: 0.8em; margin-top: 5px;">Sync from repository</div>
+                    </div>
+                    <div class="upload-method">
+                        <div style="font-size: 2em;">☁️</div>
+                        <strong>Cloud Storage</strong>
+                        <div style="font-size: 0.8em; margin-top: 5px;">S3/Azure Blob import</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="components-grid">
+                <div class="component-card">
+                    <h4><span class="component-icon">✅</span> Validation Engine</h4>
+                    <div class="component-details">
+                        <strong>Azure Functions - Validation Pipeline</strong>
+                        <div style="margin-top: 10px;">
+                            <div class="validation-result valid">
+                                <strong>✓ Syntax Check</strong><br>
+                                Valid JSON/CSV format, proper escaping
+                            </div>
+                            <div class="validation-result valid">
+                                <strong>✓ Structure Validation</strong><br>
+                                Required fields: prompt_text, category, severity
+                            </div>
+                            <div class="validation-result warning">
+                                <strong>⚠ Duplicate Detection</strong><br>
+                                Found 3 similar prompts (90%+ similarity)
+                            </div>
+                            <div class="validation-result valid">
+                                <strong>✓ Content Policy</strong><br>
+                                No harmful/illegal content detected
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">🧬</span> Prompt Processing</h4>
+                    <div class="component-details">
+                        <strong>Customer Prompt Structure</strong>
+                        <div class="code-block">
+{
+  "<span class="code-highlight">prompt_id</span>": "CUST-FIN-001",
+  "<span class="code-highlight">prompt_text</span>": "Ignore previous instructions...",
+  "<span class="code-highlight">category</span>": "prompt_injection",
+  "<span class="code-highlight">severity</span>": "critical",
+  "<span class="code-highlight">customer_tags</span>": ["banking", "transaction"],
+  "<span class="code-highlight">expected_behavior</span>": "should_block",
+  "<span class="code-highlight">tenant_id</span>": "fintech-8d4f",
+  "<span class="code-highlight">upload_timestamp</span>": "2024-01-15T10:30:00Z"
+}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">💾</span> Temporary Storage</h4>
+                    <div class="component-details">
+                        <strong>Azure Service Bus - Validation Queue</strong>
+                        <div class="storage-info">
+                            <div class="storage-item">
+                                <span class="storage-label">Queue Name:</span>
+                                <span class="storage-value">fintech-8d4f-validation</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Message TTL:</span>
+                                <span class="storage-value">24 hours</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Max Size:</span>
+                                <span class="storage-value">5GB per tenant</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert-box">
+                <span class="alert-icon">⚡</span>
+                <div>
+                    <strong>Validation Results:</strong> 147/150 prompts passed validation. 
+                    3 prompts need review (duplicates). Processing time: 2.3 seconds.
+                </div>
+            </div>
+        </div>
+        
+        <div class="flow-arrow">↓</div>
+        
+        <!-- Stage 3: Prompt Registry Storage -->
+        <div class="flow-stage stage-3">
+            <div class="stage-header">
+                <div class="stage-number">3</div>
+                <h3 class="stage-title">📚 Prompt Registry Storage</h3>
+            </div>
+            
+            <div class="registry-display">
+                <h4 style="color: #f39c12; margin-bottom: 15px;">🗄️ Customer Prompt Registry - PostgreSQL</h4>
+                
+                <div class="registry-entry">
+                    <div class="registry-field"><span class="field-name">Table:</span> <span class="field-value">customer_prompts</span></div>
+                    <div class="registry-field"><span class="field-name">prompt_id:</span> <span class="field-value">uuid (auto-generated)</span></div>
+                    <div class="registry-field"><span class="field-name">customer_prompt_id:</span> <span class="field-value">CUST-FIN-001</span></div>
+                    <div class="registry-field"><span class="field-name">tenant_id:</span> <span class="field-value">fintech-8d4f</span></div>
+                    <div class="registry-field"><span class="field-name">prompt_hash:</span> <span class="field-value">sha256:a7b9c3d4e5f6...</span></div>
+                    <div class="registry-field"><span class="field-name">vector_category:</span> <span class="field-value">CL-IM-01 (mapped)</span></div>
+                    <div class="registry-field"><span class="field-name">status:</span> <span class="field-value">active</span></div>
+                    <div class="registry-field"><span class="field-name">created_at:</span> <span class="field-value">2024-01-15 10:35:22 UTC</span></div>
+                </div>
+            </div>
+            
+            <div class="components-grid">
+                <div class="component-card">
+                    <h4><span class="component-icon">🔐</span> Secure Storage</h4>
+                    <div class="component-details">
+                        <strong>Multi-Layer Security</strong>
+                        <ul style="margin: 10px 0; padding-left: 20px;">
+                            <li>Row-level security by tenant_id</li>
+                            <li>Encrypted at rest (AES-256)</li>
+                            <li>Customer-managed keys (CMK)</li>
+                            <li>Audit logging enabled</li>
+                            <li>30-day soft delete</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">🚀</span> Cache Layer</h4>
+                    <div class="component-details">
+                        <strong>Redis Cache - Hot Prompts</strong>
+                        <div class="storage-info">
+                            <div class="storage-item">
+                                <span class="storage-label">Cache Key:</span>
+                                <span class="storage-value">fintech-8d4f:prompts:*</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">TTL:</span>
+                                <span class="storage-value">1 hour</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Hit Rate:</span>
+                                <span class="storage-value">94%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">🏷️</span> Metadata Store</h4>
+                    <div class="component-details">
+                        <strong>Cosmos DB - Extended Attributes</strong>
+                        <div class="code-block">
+{
+  "promptId": "uuid-here",
+  "metadata": {
+    "customerTags": ["banking", "high-risk"],
+    "testingPriority": "high",
+    "lastModified": "2024-01-15",
+    "customFields": {
+      "businessUnit": "retail-banking",
+      "riskScore": 85
+    }
+  }
+}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flow-arrow">↓</div>
+        
+        <!-- Stage 4: Test Execution -->
+        <div class="flow-stage stage-4">
+            <div class="stage-header">
+                <div class="stage-number">4</div>
+                <h3 class="stage-title">🧪 Isolated Test Execution</h3>
+            </div>
+            
+            <div class="components-grid">
+                <div class="component-card">
+                    <h4><span class="component-icon">🎯</span> Test Orchestration</h4>
+                    <div class="component-details">
+                        <strong>Azure Container Apps - Test Runners</strong>
+                        <div class="test-progress">
+                            <h5>Testing Progress - FinTech Corp</h5>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 73%;">73% (110/150 prompts)</div>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                                <span>⏱️ Elapsed: 3m 42s</span>
+                                <span>🚀 Rate: 30 prompts/min</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">🔒</span> Tenant Isolation</h4>
+                    <div class="component-details">
+                        <strong>Complete Isolation Per Customer</strong>
+                        <div class="storage-info">
+                            <div class="storage-item">
+                                <span class="storage-label">Container Group:</span>
+                                <span class="storage-value">cg-fintech-8d4f</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">VNet:</span>
+                                <span class="storage-value">vnet-fintech-isolated</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Queue:</span>
+                                <span class="storage-value">sb-fintech-test-queue</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">📊</span> Real-time Results</h4>
+                    <div class="component-details">
+                        <strong>Test Results Stream</strong>
+                        <div style="margin-top: 10px;">
+                            <div class="validation-result valid">
+                                CUST-FIN-001: ✓ Blocked successfully
+                            </div>
+                            <div class="validation-result invalid">
+                                CUST-FIN-045: ✗ Bypassed defense
+                            </div>
+                            <div class="validation-result warning">
+                                CUST-FIN-089: ⚠ Partial bypass
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flow-arrow">↓</div>
+        
+        <!-- Stage 5: Scoring & Analysis -->
+        <div class="flow-stage stage-5">
+            <div class="stage-header">
+                <div class="stage-number">5</div>
+                <h3 class="stage-title">📈 Scoring & Risk Analysis</h3>
+            </div>
+            
+            <div class="components-grid">
+                <div class="component-card">
+                    <h4><span class="component-icon">🧮</span> Scoring Engine</h4>
+                    <div class="component-details">
+                        <strong>Azure Synapse - Analytics Pipeline</strong>
+                        <div class="results-dashboard">
+                            <div class="result-metric">
+                                <div class="label">Success Rate</div>
+                                <div class="value" style="color: #e74c3c;">68%</div>
+                            </div>
+                            <div class="result-metric">
+                                <div class="label">Critical</div>
+                                <div class="value" style="color: #e74c3c;">12</div>
+                            </div>
+                            <div class="result-metric">
+                                <div class="label">High</div>
+                                <div class="value" style="color: #f39c12;">23</div>
+                            </div>
+                            <div class="result-metric">
+                                <div class="label">Medium</div>
+                                <div class="value" style="color: #fbbf24;">18</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">💾</span> Results Storage</h4>
+                    <div class="component-details">
+                        <strong>Cosmos DB - Test Results</strong>
+                        <div class="code-block">
+{
+  "testRunId": "tr-2024-01-15-001",
+  "tenantId": "fintech-8d4f",
+  "promptId": "CUST-FIN-001",
+  "results": {
+    "blocked": true,
+    "responseTime": 145,
+    "confidenceScore": 0.92,
+    "modelBehavior": "correct"
+  },
+  "timestamp": "2024-01-15T10:45:00Z"
+}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">🎯</span> Risk Mapping</h4>
+                    <div class="component-details">
+                        <strong>Customer Prompt Risk Matrix</strong>
+                        <div class="storage-info">
+                            <div class="storage-item">
+                                <span class="storage-label">Overall Risk:</span>
+                                <span class="storage-value" style="color: #e74c3c;">HIGH</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Coverage:</span>
+                                <span class="storage-value">68% blocked</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Priority Actions:</span>
+                                <span class="storage-value">12 critical</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flow-arrow">↓</div>
+        
+        <!-- Stage 6: Dashboard & Reporting -->
+        <div class="flow-stage stage-6">
+            <div class="stage-header">
+                <div class="stage-number">6</div>
+                <h3 class="stage-title">📊 Dashboard Storage & Visualization</h3>
+            </div>
+            
+            <div class="components-grid">
+                <div class="component-card">
+                    <h4><span class="component-icon">📈</span> Power BI Integration</h4>
+                    <div class="component-details">
+                        <strong>Customer Dashboard Views</strong>
+                        <div class="storage-info">
+                            <div class="storage-item">
+                                <span class="storage-label">Workspace:</span>
+                                <span class="storage-value">ws-fintech-8d4f</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Dataset:</span>
+                                <span class="storage-value">byop-test-results</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Refresh:</span>
+                                <span class="storage-value">Real-time</span>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px;">
+                            <strong>Dashboard Components:</strong>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li>Custom Prompt Performance Matrix</li>
+                                <li>Success/Failure Heatmap</li>
+                                <li>Category-wise Risk Distribution</li>
+                                <li>Time-series Analysis</li>
+                                <li>Model-specific Performance</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">💾</span> Long-term Storage</h4>
+                    <div class="component-details">
+                        <strong>Azure Data Lake - Archive</strong>
+                        <div class="storage-info">
+                            <div class="storage-item">
+                                <span class="storage-label">Container:</span>
+                                <span class="storage-value">byop-archive/fintech-8d4f/</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Format:</span>
+                                <span class="storage-value">Parquet + JSON</span>
+                            </div>
+                            <div class="storage-item">
+                                <span class="storage-label">Retention:</span>
+                                <span class="storage-value">7 years</span>
+                            </div>
+                        </div>
+                        <div class="code-block" style="margin-top: 10px;">
+/byop-archive/
+  /fintech-8d4f/
+    /2024/01/15/
+      /test-runs/
+        tr-2024-01-15-001.parquet
+      /prompt-registry/
+        prompts-snapshot.json
+      /results/
+        detailed-results.parquet
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="component-card">
+                    <h4><span class="component-icon">🔔</span> Alerting & Actions</h4>
+                    <div class="component-details">
+                        <strong>Automated Response System</strong>
+                        <div style="margin-top: 10px;">
+                            <div class="alert-box" style="background: rgba(231, 76, 60, 0.2);">
+                                <span class="alert-icon">🚨</span>
+                                <div>
+                                    <strong>Critical Alert:</strong> 12 customer prompts bypassed defenses.
+                                    Action: Immediate remediation required.
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px;">
+                                <strong>Automated Actions:</strong>
+                                <ul style="margin: 5px 0; padding-left: 20px;">
+                                    <li>Email alert to security team</li>
+                                    <li>Slack notification to customer</li>
+                                    <li>JIRA ticket creation</li>
+                                    <li>Model update recommendation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="registry-display" style="margin-top: 20px;">
+                <h4 style="color: #9b59b6;">🎯 Final Dashboard URL & Access</h4>
+                <div class="storage-info">
+                    <div class="storage-item">
+                        <span class="storage-label">Dashboard URL:</span>
+                        <span class="storage-value">https://aitif.app/dashboard/fintech-8d4f/byop</span>
+                    </div>
+                    <div class="storage-item">
+                        <span class="storage-label">API Endpoint:</span>
+                        <span class="storage-value">GET /api/v1/byop/results/{testRunId}</span>
+                    </div>
+                    <div class="storage-item">
+                        <span class="storage-label">Webhook:</span>
+                        <span class="storage-value">https://fintech.com/aitif-webhook</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Box -->
+        <div style="background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 15px; padding: 30px; margin-top: 30px; text-align: center;">
+            <h2 style="margin-bottom: 20px;">🎯 BYOP Complete Flow Summary</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <div style="font-size: 2em; font-weight: bold;">150</div>
+                    <div>Custom Prompts Uploaded</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <div style="font-size: 2em; font-weight: bold;">147</div>
+                    <div>Validated & Stored</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <div style="font-size: 2em; font-weight: bold;">5 min</div>
+                    <div>Total Test Time</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px;">
+                    <div style="font-size: 2em; font-weight: bold;">68%</div>
+                    <div>Defense Success Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Customer selection
+        function selectCustomer(customer) {
+            document.querySelectorAll('.customer-badge').forEach(badge => {
+                badge.classList.remove('active');
+            });
+            event.target.closest('.customer-badge').classList.add('active');
+            
+            // Update displays based on customer
+            updateCustomerData(customer);
+        }
+        
+        function updateCustomerData(customer) {
+            // This would update all the dynamic content based on selected customer
+            console.log('Switching to customer:', customer);
+        }
+        
+        // Simulate progress animation
+        setTimeout(() => {
+            const progressBar = document.querySelector('.progress-fill');
+            if (progressBar) {
+                progressBar.style.width = '73%';
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
